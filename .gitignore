@@ -1,0 +1,27 @@
+# Runtime state
+usage-cache.json
+usage-cache.refresh
+
+# Logs
+*.log
+*.log.err
+daemon-debug.*
+
+# Credenciais (nunca commitar)
+.credentials.json
+*.token
+.env
+.env.*
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup
+*.bak
+*.orig
+*.original.md
