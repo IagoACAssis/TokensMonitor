@@ -1,6 +1,6 @@
 # Claude Code Tokens Monitor
 
-Statusline para [Claude Code](https://claude.com/claude-code) no Windows. Mostra utilização da janela de 5 horas e 7 dias em barras coloridas via OAuth API.
+Statusline para [Claude Code](https://claude.com/claude-code) no Windows (PowerShell) e no Linux/WSL (bash). Mostra utilização da janela de 5 horas e 7 dias em barras coloridas via OAuth API.
 
 ```
 5h [####------] 19% (4h) | 7d [#---------] 13% (3d2h)
@@ -40,6 +40,46 @@ powershell -ExecutionPolicy Bypass -File .\uninstall.ps1
 ```
 
 Remove o diretório de instalação, retira `statusLine` do `settings.json` (com backup `.bak`) e limpa resíduos legados (hook `UserPromptSubmit` e `commands\monitor-refresh.md`, se existirem). Só mexe na chave `statusLine` se ela apontar para `statusline-tokens.ps1` — configs custom de outras ferramentas são preservadas.
+
+## Linux / WSL (bash)
+
+Port em bash do statusline, em um único script: `statusline-tokens.sh`. Requer `bash`, `curl` e `jq`.
+
+Além das barras 5h/7d, mostra o contexto da sessão em tokens e percentual:
+
+```
+ctx 62k/1M (6%) | 5h [##--------] 21% (1h31m) | 7d [----------] 4% (6d16h)
+```
+
+- Contexto: **verde** < 120k · **amarelo** ≥ 120k · **vermelho** ≥ 140k (ajuste `ctx_warn` / `ctx_crit` no script). A cor segue os tokens, não o percentual, porque em janelas de 1M o percentual fica baixo.
+- O uso 5h/7d vem do campo `rate_limits` que o próprio Claude Code manda no stdin, sem chamada de rede.
+- Se esse campo não vier, cai para a OAuth usage API com cache em disco: throttle de 60s (com 5s o endpoint responde 429), flag `usage-cache.refresh`, mantém o último cache bom e grava `last_error` (código HTTP) em falha.
+
+Instalação:
+
+```bash
+mkdir -p ~/.claude/statusline-tokens
+cp statusline-tokens.sh ~/.claude/statusline-tokens/
+chmod +x ~/.claude/statusline-tokens/statusline-tokens.sh
+```
+
+Em `~/.claude/settings.json`:
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "bash ~/.claude/statusline-tokens/statusline-tokens.sh",
+  "padding": 0
+}
+```
+
+Refresh manual: `touch ~/.claude/statusline-tokens/usage-cache.refresh`.
+
+Para controlar a compactação manualmente (`/compact` e `/clear` continuam funcionando), desative a automática em `settings.json`:
+
+```json
+"env": { "DISABLE_AUTO_COMPACT": "1" }
+```
 
 ## Como funciona
 
@@ -123,8 +163,9 @@ Get-Process powershell -ErrorAction SilentlyContinue |
 
 ## Roadmap
 
-- [ ] Port macOS/Linux (bash)
-- [ ] Modo verboso opcional (tokens, custo, contexto)
+- [x] Port Linux/WSL (bash)
+- [ ] Testar o port bash no macOS (usa `date -d` e `stat -c`, do GNU)
+- [ ] Modo verboso opcional (tokens, custo) — contexto já existe no port bash
 - [ ] Refresh transparente do token OAuth
 
 ## Licença
